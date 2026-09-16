@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Periodic Table of Elements</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #171717;
+      --bg-mid: #373737;
+      --text-light: #BABABA;
+      --red-1: #FF2D2D;
+      --red-2: #CC2424;
+      --orange-1: #FF8C2D;
+      --orange-2: #CC7024;
+      --green-1: #2DFF6A;
+      --green-2: #24CC55;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      font-weight: 300;
+      background: var(--bg-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+    }
+
+    .header {
+      padding: 2rem 1.5rem;
+      text-align: center;
+      border-bottom: 1px solid var(--bg-mid);
+    }
+
+    .header h1 {
+      font-weight: 300;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      font-size: 0.8rem;
+      opacity: 0.6;
+      letter-spacing: 0.1em;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 3px;
+      border-radius: 1px;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.5rem 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: var(--bg-mid);
+      border: 1px solid transparent;
+      color: var(--text-light);
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      padding: 0.4rem 1rem;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+
+    .filter-btn:hover { border-color: var(--text-light); }
+    .filter-btn.active { border-color: var(--text-light); background: #2a2a2a; }
+
+    .table-container {
+      padding: 0 1rem 2rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .periodic-grid {
+      display: grid;
+      grid-template-columns: repeat(18, minmax(52px, 1fr));
+      gap: 3px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .element {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg-mid);
+      border: 1px solid transparent;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      min-width: 52px;
+      min-height: 52px;
+    }
+
+    .element:hover {
+      transform: scale(1.15);
+      z-index: 10;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+
+    .element.non-metal { border-left: 2px solid var(--red-1); }
+    .element.non-metal:hover { border-color: var(--red-2); box-shadow: 0 0 15px var(--red-2); }
+
+    .element.semi-metal { border-left: 2px solid var(--orange-1); }
+    .element.semi-metal:hover { border-color: var(--orange-2); box-shadow: 0 0 15px var(--orange-2); }
+
+    .element.metal { border-left: 2px solid var(--green-1); }
+    .element.metal:hover { border-color: var(--green-2); box-shadow: 0 0 15px var(--green-2); }
+
+    .element .number {
+      font-size: 0.5rem;
+      opacity: 0.5;
+      font-weight: 400;
+    }
+
+    .element .symbol {
+      font-size: clamp(0.9rem, 2vw, 1.3rem);
+      font-weight: 500;
+      line-height: 1.1;
+    }
+
+    .element .name {
+      font-size: 0.4rem;
+      opacity: 0.4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .element.empty {
+      background: transparent;
+      pointer-events: none;
+    }
+
+    .element.filtered-out {
+      opacity: 0.08;
+      pointer-events: none;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--bg-mid);
+      border-radius: 4px;
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    .modal-close:hover { opacity: 1; }
+
+    .modal .element-number {
+      font-size: 0.7rem;
+      opacity: 0.5;
+    }
+
+    .modal .element-symbol {
+      font-size: 3rem;
+      font-weight: 500;
+      margin: 0.3rem 0;
+    }
+
+    .modal .element-name {
+      font-size: 1rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.2rem;
+    }
+
+    .modal .element-category {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal .element-category.non-metal { color: var(--red-1); }
+    .modal .element-category.semi-metal { color: var(--orange-1); }
+    .modal .element-category.metal { color: var(--green-1); }
+
+    .modal .details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .modal .detail-item {
+      border-top: 1px solid rgba(186,186,186,0.1);
+      padding-top: 0.4rem;
+    }
+
+    .modal .detail-label {
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.4;
+    }
+
+    .modal .detail-value {
+      font-size: 0.85rem;
+      font-weight: 400;
+    }
+
+    .modal .detail-item.full {
+      grid-column: 1 / -1;
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .periodic-grid {
+        grid-template-columns: repeat(18, 40px);
+        gap: 2px;
+      }
+
+      .element {
+        min-width: 40px;
+        min-height: 40px;
+      }
+
+      .element .number { font-size: 0.4rem; }
+      .element .symbol { font-size: 0.7rem; }
+      .element .name { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .periodic-grid {
+        grid-template-columns: repeat(9, 1fr);
+      }
+
+      .row-label { display: none; }
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <h1>Periodic Table</h1>
+    <p>Interactive reference of chemical elements</p>
+  </header>
+
+  <nav class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background: var(--red-1);"></div>
+      <span>Non-Metal</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: var(--orange-1);"></div>
+      <span>Semi-Metal</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background: var(--green-1);"></div>
+      <span>Metal</span>
+    </div>
+  </nav>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="non-metal">Non-Metals</button>
+    <button class="filter-btn" data-filter="semi-metal">Semi-Metals</button>
+    <button class="filter-btn" data-filter="metal">Metals</button>
+  </div>
+
+  <div class="table-container">
+    <div class="periodic-grid" id="grid"></div>
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="element-number" id="modalNumber"></div>
+      <div class="element-symbol" id="modalSymbol"></div>
+      <div class="element-name" id="modalName"></div>
+      <div class="element-category" id="modalCategory"></div>
+      <div class="details" id="modalDetails"></div>
+    </div>
+  </div>
+
+  <script>
+    const elements = [
+      { number: 1, symbol: "H", name: "Hydrogen", category: "non-metal", mass: "1.008", electron: "1s¹", phase: "Gas", group: 1, period: 1, density: "0.00008988 g/cm³", melt: "-259.16 °C", boil: "-252.87 °C" },
+      { number: 2, symbol: "He", name: "Helium", category: "non-metal", mass: "4.0026", electron: "1s²", phase: "Gas", group: 18, period: 1, density: "0.0001785 g/cm³", melt: "-272.2 °C", boil: "-268.93 °C" },
+      { number: 3, symbol: "Li", name: "Lithium", category: "metal", mass: "6.94", electron: "[He]2s¹", phase: "Solid", group: 1, period: 2, density: "0.534 g/cm³", melt: "180.54 °C", boil: "1342 °C" },
+      { number: 4, symbol: "Be", name: "Beryllium", category: "metal", mass: "9.0122", electron: "[He]2s²", phase: "Solid", group: 2, period: 2, density: "1.85 g/cm³", melt: "1287 °C", boil: "2469 °C" },
+      { number: 5, symbol: "B", name: "Boron", category: "semi-metal", mass: "10.81", electron: "[He]2s²2p¹", phase: "Solid", group: 13, period: 2, density: "2.34 g/cm³", melt: "2076 °C", boil: "3927 °C" },
+      { number: 6, symbol: "C", name: "Carbon", category: "non-metal", mass: "12.011", electron: "[He]2s²2p²", phase: "Solid", group: 14, period: 2, density: "2.267 g/cm³", melt: "3550 °C", boil: "4027 °C" },
+      { number: 7, symbol: "N", name: "Nitrogen", category: "non-metal", mass: "14.007", electron: "[He]2s²2p³", phase: "Gas", group: 15, period: 2, density: "0.0012506 g/cm³", melt: "-210.0 °C", boil: "-195.79 °C" },
+      { number: 8, symbol: "O", name: "Oxygen", category: "non-metal", mass: "15.999", electron: "[He]2s²2p⁴", phase: "Gas", group: 16, period: 2, density: "0.001429 g/cm³", melt: "-218.79 °C", boil: "-182.96 °C" },
+      { number: 9, symbol: "F", name: "Fluorine", category: "non-metal", mass: "18.998", electron: "[He]2s²2p⁵", phase: "Gas", group: 17, period: 2, density: "0.001696 g/cm³", melt: "-219.67 °C", boil: "-188.11 °C" },
+      { number: 10, symbol: "Ne", name: "Neon", category: "non-metal", mass: "20.180", electron: "[He]2s²2p⁶", phase: "Gas", group: 18, period: 2, density: "0.0009 g/cm³", melt: "-248.59 °C", boil: "-246.08 °C" },
+      { number: 11, symbol: "Na", name: "Sodium", category: "metal", mass: "22.990", electron: "[Ne]3s¹", phase: "Solid", group: 1, period: 3, density: "0.971 g/cm³", melt: "97.794 °C", boil: "882.94 °C" },
+      { number: 12, symbol: "Mg", name: "Magnesium", category: "metal", mass: "24.305", electron: "[Ne]3s²", phase: "Solid", group: 2, period: 3, density: "1.738 g/cm³", melt: "650 °C", boil: "1091 °C" },
+      { number: 13, symbol: "Al", name: "Aluminium", category: "metal", mass: "26.982", electron: "[Ne]3s²3p¹", phase: "Solid", group: 13, period: 3, density: "2.698 g/cm³", melt: "660.32 °C", boil: "2519 °C" },
+      { number: 14, symbol: "Si", name: "Silicon", category: "semi-metal", mass: "28.085", electron: "[Ne]3s²3p²", phase: "Solid", group: 14, period: 3, density: "2.3296 g/cm³", melt: "1414 °C", boil: "3265 °C" },
+      { number: 15, symbol: "P", name: "Phosphorus", category: "non-metal", mass: "30.974", electron: "[Ne]3s²3p³", phase: "Solid", group: 15, period: 3, density: "1.82 g/cm³", melt: "44.15 °C", boil: "280.5 °C" },
+      { number: 16, symbol: "S", name: "Sulfur", category: "non-metal", mass: "32.06", electron: "[Ne]3s²3p⁴", phase: "Solid", group: 16, period: 3, density: "2.067 g/cm³", melt: "115.21 °C", boil: "444.6 °C" },
+      { number: 17, symbol: "Cl", name: "Chlorine", category: "non-metal", mass: "35.45", electron: "[Ne]3s²3p⁵", phase: "Gas", group: 17, period: 3, density: "0.003214 g/cm³", melt: "-101.5 °C", boil: "-34.04 °C" },
+      { number: 18, symbol: "Ar", name: "Argon", category: "non-metal", mass: "39.948", electron: "[Ne]3s²3p⁶", phase: "Gas", group: 18, period: 3, density: "0.0017837 g/cm³", melt: "-189.34 °C", boil: "-185.85 °C" },
+      { number: 19, symbol: "K", name: "Potassium", category: "metal", mass: "39.098", electron: "[Ar]4s¹", phase: "Solid", group: 1, period: 4, density: "0.862 g/cm³", melt: "63.5 °C", boil: "759 °C" },
+      { number: 20, symbol: "Ca", name: "Calcium", category: "metal", mass: "40.078", electron: "[Ar]4s²", phase: "Solid", group: 2, period: 4, density: "1.55 g/cm³", melt: "842 °C", boil: "1484 °C" },
+      { number: 21, symbol: "Sc", name: "Scandium", category: "metal", mass: "44.956", electron: "[Ar]3d¹4s²", phase: "Solid", group: 3, period: 4, density: "2.989 g/cm³", melt: "1541 °C", boil: "2836 °C" },
+      { number: 22, symbol: "Ti", name: "Titanium", category: "metal", mass: "47.867", electron: "[Ar]3d²4s²", phase: "Solid", group: 4, period: 4, density: "4.54 g/cm³", melt: "1668 °C", boil: "3287 °C" },
+      { number: 23, symbol: "V", name: "Vanadium", category: "metal", mass: "50.942", electron: "[Ar]3d³4s²", phase: "Solid", group: 5, period: 4, density: "6.11 g/cm³", melt: "1910 °C", boil: "3407 °C" },
+      { number: 24, symbol: "Cr", name: "Chromium", category: "metal", mass: "51.996", electron: "[Ar]3d⁵4s¹", phase: "Solid", group: 6, period: 4, density: "7.15 g/cm³", melt: "1907 °C", boil: "2671 °C" },
+      { number: 25, symbol: "Mn", name: "Manganese", category: "metal", mass: "54.938", electron: "[Ar]3d⁵4s²", phase: "Solid", group: 7, period: 4, density: "7.44 g/cm³", melt: "1246 °C", boil: "2061 °C" },
+      { number: 26, symbol: "Fe", name: "Iron", category: "metal", mass: "55.845", electron: "[Ar]3d⁶4s²", phase: "Solid", group: 8, period: 4, density: "7.874 g/cm³", melt: "1538 °C", boil: "2862 °C" },
+      { number: 27, symbol: "Co", name: "Cobalt", category: "metal", mass: "58.933", electron: "[Ar]3d⁷4s²", phase: "Solid", group: 9, period: 4, density: "8.9 g/cm³", melt: "1495 °C", boil: "2927 °C" },
+      { number: 28, symbol: "Ni", name: "Nickel", category: "metal", mass: "58.693", electron: "[Ar]3d⁸4s²", phase: "Solid", group: 10, period: 4, density: "8.908 g/cm³", melt: "1455 °C", boil: "2913 °C" },
+      { number: 29, symbol: "Cu", name: "Copper", category: "metal", mass: "63.546", electron: "[Ar]3d¹⁰4s¹", phase: "Solid", group: 11, period: 4, density: "8.96 g/cm³", melt: "1084.62 °C", boil: "2560 °C" },
+      { number: 30, symbol: "Zn", name: "Zinc", category: "metal", mass: "65.38", electron: "[Ar]3d¹⁰4s²", phase: "Solid", group: 12, period: 4, density: "7.134 g/cm³", melt: "419.53 °C", boil: "907 °C" },
+      { number: 31, symbol: "Ga", name: "Gallium", category: "metal", mass: "69.723", electron: "[Ar]3d¹⁰4s²4p¹", phase: "Solid", group: 13, period: 4, density: "5.907 g/cm³", melt: "29.76 °C", boil: "2204 °C" },
+      { number: 32, symbol: "Ge", name: "Germanium", category: "semi-metal", mass: "72.63", electron: "[Ar]3d¹⁰4s²4p²", phase: "Solid", group: 14, period: 4, density: "5.323 g/cm³", melt: "938.25 °C", boil: "2833 °C" },
+      { number: 33, symbol: "As", name: "Arsenic", category: "semi-metal", mass: "74.922", electron: "[Ar]3d¹⁰4s²4p³", phase: "Solid", group: 15, period: 4, density: "5.776 g/cm³", melt: "817 °C", boil: "614 °C" },
+      { number: 34, symbol: "Se", name: "Selenium", category: "non-metal", mass: "78.971", electron: "[Ar]3d¹⁰4s²4p⁴", phase: "Solid", group: 16, period: 4, density: "4.809 g/cm³", melt: "220.8 °C", boil: "685 °C" },
+      { number: 35, symbol: "Br", name: "Bromine", category: "non-metal", mass: "79.904", electron: "[Ar]3d¹⁰4s²4p⁵", phase: "Liquid", group: 17, period: 4, density: "3.122 g/cm³", melt: "-7.2 °C", boil: "58.8 °C" },
+      { number: 36, symbol: "Kr", name: "Krypton", category: "non-metal", mass: "83.798", electron: "[Ar]3d¹⁰4s²4p⁶", phase: "Gas", group: 18, period: 4, density: "0.003733 g/cm³", melt: "-157.36 °C", boil: "-153.22 °C" },
+      { number: 37, symbol: "Rb", name: "Rubidium", category: "metal", mass: "85.468", electron: "[Kr]5s¹", phase: "Solid", group: 1, period: 5, density: "1.532 g/cm³", melt: "39.31 °C", boil: "688 °C" },
+      { number: 38, symbol: "Sr", name: "Strontium", category: "metal", mass: "87.62", electron: "[Kr]5s²", phase: "Solid", group: 2, period: 5, density: "2.64 g/cm³", melt: "777 °C", boil: "1382 °C" },
+      { number: 39, symbol: "Y", name: "Yttrium", category: "metal", mass: "88.906", electron: "[Kr]4d¹5s²", phase: "Solid", group: 3, period: 5, density: "4.469 g/cm³", melt: "1522 °C", boil: "3345 °C" },
+      { number: 40, symbol: "Zr", name: "Zirconium", category: "metal", mass: "91.224", electron: "[Kr]4d²5s²", phase: "Solid", group: 4, period: 5, density: "6.506 g/cm³", melt: "1855 °C", boil: "4409 °C" },
+      { number: 41, symbol: "Nb", name: "Niobium", category: "metal", mass: "92.906", electron: "[Kr]4d⁴5s¹", phase: "Solid", group: 5, period: 5, density: "8.57 g/cm³", melt: "2477 °C", boil: "4744 °C" },
+      { number: 42, symbol: "Mo", name: "Molybdenum", category: "metal", mass: "95.95", electron: "[Kr]4d⁵5s¹", phase: "Solid", group: 6, period: 5, density: "10.22 g/cm³", melt: "2623 °C", boil: "4639 °C" },
+      { number: 43, symbol: "Tc", name: "Technetium", category: "metal", mass: "98", electron: "[Kr]4d⁵5s²", phase: "Solid", group: 7, period: 5, density: "11.5 g/cm³", melt: "2157 °C", boil: "4265 °C" },
+      { number: 44, symbol: "Ru", name: "Ruthenium", category: "metal", mass: "101.07", electron: "[Kr]4d⁷5s¹", phase: "Solid", group: 8, period: 5, density: "12.37 g/cm³", melt: "2334 °C", boil: "4150 °C" },
+      { number: 45, symbol: "Rh", name: "Rhodium", category: "metal", mass: "102.91", electron: "[Kr]4d⁸5s¹", phase: "Solid", group: 9, period: 5, density: "12.41 g/cm³", melt: "1964 °C", boil: "3695 °C" },
+      { number: 46, symbol: "Pd", name: "Palladium", category: "metal", mass: "106.42", electron: "[Kr]4d¹⁰", phase: "Solid", group: 10, period: 5, density: "12.02 g/cm³", melt: "1554.9 °C", boil: "2963 °C" },
+      { number: 47, symbol: "Ag", name: "Silver", category: "metal", mass: "107.87", electron: "[Kr]4d¹⁰5s¹", phase: "Solid", group: 11, period: 5, density: "10.501 g/cm³", melt: "961.78 °C", boil: "2162 °C" },
+      { number: 48, symbol: "Cd", name: "Cadmium", category: "metal", mass: "112.41", electron: "[Kr]4d¹⁰5s²", phase: "Solid", group: 12, period: 5, density: "8.69 g/cm³", melt: "321.07 °C", boil: "767 °C" },
+      { number: 49, symbol: "In", name: "Indium", category: "metal", mass: "114.82", electron: "[Kr]4d¹⁰5s²5p¹", phase: "Solid", group: 13, period: 5, density: "7.31 g/cm³", melt: "156.6 °C", boil: "2072 °C" },
+      { number: 50, symbol: "Sn", name: "Tin", category: "metal", mass: "118.71", electron: "[Kr]4d¹⁰5s²5p²", phase: "Solid", group: 14, period: 5, density: "7.287 g/cm³", melt: "231.93 °C", boil: "2602 °C" },
+      { number: 51, symbol: "Sb", name: "Antimony", category: "semi-metal", mass: "121.76", electron: "[Kr]4d¹⁰5s²5p³", phase: "Solid", group: 15, period: 5, density: "6.685 g/cm³", melt: "630.63 °C", boil: "1587 °C" },
+      { number: 52, symbol: "Te", name: "Tellurium", category: "semi-metal", mass: "127.60", electron: "[Kr]4d¹⁰5s²5p⁴", phase: "Solid", group: 16, period: 5, density: "6.232 g/cm³", melt: "449.51 °C", boil: "988 °C" },
+      { number: 53, symbol: "I", name: "Iodine", category: "non-metal", mass: "126.90", electron: "[Kr]4d¹⁰5s²5p⁵", phase: "Solid", group: 17, period: 5, density: "4.93 g/cm³", melt: "113.7 °C", boil: "184.3 °C" },
+      { number: 54, symbol: "Xe", name: "Xenon", category: "non-metal", mass: "131.29", electron: "[Kr]4d¹⁰5s²5p⁶", phase: "Gas", group: 18, period: 5, density: "0.005887 g/cm³", melt: "-111.75 °C", boil: "-108.1 °C" },
+      { number: 55, symbol: "Cs", name: "Caesium", category: "metal", mass: "132.91", electron: "[Xe]6s¹", phase: "Solid", group: 1, period: 6, density: "1.873 g/cm³", melt: "28.44 °C", boil: "671 °C" },
+      { number: 56, symbol: "Ba", name: "Barium", category: "metal", mass: "137.33", electron: "[Xe]6s²", phase: "Solid", group: 2, period: 6, density: "3.594 g/cm³", melt: "727 °C", boil: "1845 °C" },
+      { number: 72, symbol: "Hf", name: "Hafnium", category: "metal", mass: "178.49", electron: "[Xe]4f¹⁴5d²6s²", phase: "Solid", group: 4, period: 6, density: "13.31 g/cm³", melt: "2233 °C", boil: "4603 °C" },
+      { number: 73, symbol: "Ta", name: "Tantalum", category: "metal", mass: "180.95", electron: "[Xe]4f¹⁴5d³6s²", phase: "Solid", group: 5, period: 6, density: "16.654 g/cm³", melt: "3017 °C", boil: "5458 °C" },
+      { number: 74, symbol: "W", name: "Tungsten", category: "metal", mass: "183.84", electron: "[Xe]4f¹⁴5d⁴6s²", phase: "Solid", group: 6, period: 6, density: "19.25 g/cm³", melt: "3422 °C", boil: "5555 °C" },
+      { number: 75, symbol: "Re", name: "Rhenium", category: "metal", mass: "186.21", electron: "[Xe]4f¹⁴5d⁵6s²", phase: "Solid", group: 7, period: 6, density: "21.02 g/cm³", melt: "3186 °C", boil: "5596 °C" },
+      { number: 76, symbol: "Os", name: "Osmium", category: "metal", mass: "190.23", electron: "[Xe]4f¹⁴5d⁶6s²", phase: "Solid", group: 8, period: 6, density: "22.587 g/cm³", melt: "3033 °C", boil: "5012 °C" },
+      { number: 77, symbol: "Ir", name: "Iridium", category: "metal", mass: "192.22", electron: "[Xe]4f¹⁴5d⁷6s²", phase: "Solid", group: 9, period: 6, density: "22.56 g/cm³", melt: "2446 °C", boil: "4428 °C" },
+      { number: 78, symbol: "Pt", name: "Platinum", category: "metal", mass: "195.08", electron: "[Xe]4f¹⁴5d⁹6s¹", phase: "Solid", group: 10, period: 6, density: "21.46 g/cm³", melt: "1768.3 °C", boil: "3825 °C" },
+      { number: 79, symbol: "Au", name: "Gold", category: "metal", mass: "196.97", electron: "[Xe]4f¹⁴5d¹⁰6s¹", phase: "Solid", group: 11, period: 6, density: "19.282 g/cm³", melt: "1064.18 °C", boil: "2856 °C" },
+      { number: 80, symbol: "Hg", name: "Mercury", category: "metal", mass: "200.59", electron: "[Xe]4f¹⁴5d¹⁰6s²", phase: "Liquid", group: 12, period: 6, density: "13.5336 g/cm³", melt: "-38.83 °C", boil: "356.73 °C" },
+      { number: 81, symbol: "Tl", name: "Thallium", category: "metal", mass: "204.38", electron: "[Xe]4f¹⁴5d¹⁰6s²6p¹", phase: "Solid", group: 13, period: 6, density: "11.85 g/cm³", melt: "304 °C", boil: "1473 °C" },
+      { number: 82, symbol: "Pb", name: "Lead", category: "metal", mass: "207.2", electron: "[Xe]4f¹⁴5d¹⁰6s²6p²", phase: "Solid", group: 14, period: 6, density: "11.342 g/cm³", melt: "327.46 °C", boil: "1749 °C" },
+      { number: 83, symbol: "Bi", name: "Bismuth", category: "metal", mass: "208.98", electron: "[Xe]4f¹⁴5d¹⁰6s²6p³", phase: "Solid", group: 15, period: 6, density: "9.807 g/cm³", melt: "271.4 °C", boil: "1564 °C" },
+      { number: 84, symbol: "Po", name: "Polonium", category: "metal", mass: "209", electron: "[Xe]4f¹⁴5d¹⁰6s²6p⁴", phase: "Solid", group: 16, period: 6, density: "9.32 g/cm³", melt: "254 °C", boil: "962 °C" },
+      { number: 85, symbol: "At", name: "Astatine", category: "semi-metal", mass: "210", electron: "[Xe]4f¹⁴5d¹⁰6s²6p⁵", phase: "Solid", group: 17, period: 6, density: "7 g/cm³", melt: "302 °C", boil: "337 °C" },
+      { number: 86, symbol: "Rn", name: "Radon", category: "non-metal", mass: "222", electron: "[Xe]4f¹⁴5d¹⁰6s²6p⁶", phase: "Gas", group: 18, period: 6, density: "0.00973 g/cm³", melt: "-71 °C", boil: "-61.7 °C" },
+      { number: 87, symbol: "Fr", name: "Francium", category: "metal", mass: "223", electron: "[Rn]7s¹", phase: "Solid", group: 1, period: 7, density: "1.87 g/cm³", melt: "27 °C", boil: "677 °C" },
+      { number: 88, symbol: "Ra", name: "Radium", category: "metal", mass: "226", electron: "[Rn]7s²", phase: "Solid", group: 2, period: 7, density: "5.5 g/cm³", melt: "700 °C", boil: "1737 °C" },
+      { number: 104, symbol: "Rf", name: "Rutherfordium", category: "metal", mass: "267", electron: "[Rn]5f¹⁴6d²7s²", phase: "Solid", group: 4, period: 7, density: "23.2 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 105, symbol: "Db", name: "Dubnium", category: "metal", mass: "268", electron: "[Rn]5f¹⁴6d³7s²", phase: "Solid", group: 5, period: 7, density: "29.3 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 106, symbol: "Sg", name: "Seaborgium", category: "metal", mass: "269", electron: "[Rn]5f¹⁴6d⁴7s²", phase: "Solid", group: 6, period: 7, density: "35 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 107, symbol: "Bh", name: "Bohrium", category: "metal", mass: "270", electron: "[Rn]5f¹⁴6d⁵7s²", phase: "Solid", group: 7, period: 7, density: "37.1 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 108, symbol: "Hs", name: "Hassium", category: "metal", mass: "277", electron: "[Rn]5f¹⁴6d⁶7s²", phase: "Solid", group: 8, period: 7, density: "40.7 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 109, symbol: "Mt", name: "Meitnerium", category: "metal", mass: "278", electron: "[Rn]5f¹⁴6d⁷7s²", phase: "Solid", group: 9, period: 7, density: "37.4 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 110, symbol: "Ds", name: "Darmstadtium", category: "metal", mass: "281", electron: "[Rn]5f¹⁴6d⁸7s²", phase: "Solid", group: 10, period: 7, density: "34.8 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 111, symbol: "Rg", name: "Roentgenium", category: "metal", mass: "282", electron: "[Rn]5f¹⁴6d⁹7s²", phase: "Solid", group: 11, period: 7, density: "28.7 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 112, symbol: "Cn", name: "Copernicium", category: "metal", mass: "285", electron: "[Rn]5f¹⁴6d¹⁰7s²", phase: "Solid", group: 12, period: 7, density: "14.0 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 113, symbol: "Nh", name: "Nihonium", category: "metal", mass: "286", electron: "[Rn]5f¹⁴6d¹⁰7s²7p¹", phase: "Solid", group: 13, period: 7, density: "16 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 114, symbol: "Fl", name: "Flerovium", category: "metal", mass: "289", electron: "[Rn]5f¹⁴6d¹⁰7s²7p²", phase: "Solid", group: 14, period: 7, density: "14 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 115, symbol: "Mc", name: "Moscovium", category: "metal", mass: "290", electron: "[Rn]5f¹⁴6d¹⁰7s²7p³", phase: "Solid", group: 15, period: 7, density: "13.5 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 116, symbol: "Lv", name: "Livermorium", category: "metal", mass: "293", electron: "[Rn]5f¹⁴6d¹⁰7s²7p⁴", phase: "Solid", group: 16, period: 7, density: "12.9 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 117, symbol: "Ts", name: "Tennessine", category: "metal", mass: "294", electron: "[Rn]5f¹⁴6d¹⁰7s²7p⁵", phase: "Solid", group: 17, period: 7, density: "7.2 g/cm³", melt: "N/A", boil: "N/A" },
+      { number: 118, symbol: "Og", name: "Oganesson", category: "non-metal", mass: "294", electron: "[Rn]5f¹⁴6d¹⁰7s²7p⁶", phase: "Gas", group: 18, period: 7, density: "5.0 g/cm³", melt: "N/A", boil: "N/A" }
+    ];
+
+    const grid = document.getElementById('grid');
+    const modal = document.getElementById('modal');
+
+    function buildGrid() {
+      grid.innerHTML = '';
+      for (let period = 1; period <= 7; period++) {
+        for (let group = 1; group <= 18; group++) {
+          const el = elements.find(e => e.period === period && e.group === group);
+          if (el) {
+            const div = document.createElement('div');
+            div.className = `element ${el.category}`;
+            div.dataset.number = el.number;
+            div.dataset.category = el.category;
+            div.innerHTML = `
+              <span class="number">${el.number}</span>
+              <span class="symbol">${el.symbol}</span>
+              <span class="name">${el.name}</span>
+            `;
+            div.addEventListener('click', () => openModal(el));
+            grid.appendChild(div);
+          } else {
+            const empty = document.createElement('div');
+            empty.className = 'element empty';
+            grid.appendChild(empty);
+          }
+        }
+      }
+    }
+
+    function openModal(el) {
+      document.getElementById('modalNumber').textContent = el.number;
+      document.getElementById('modalSymbol').textContent = el.symbol;
+      document.getElementById('modalName').textContent = el.name;
+
+      const cat = document.getElementById('modalCategory');
+      cat.textContent = el.category.replace('-', ' ');
+      cat.className = `element-category ${el.category}`;
+
+      const details = document.getElementById('modalDetails');
+      details.innerHTML = `
+        <div class="detail-item">
+          <div class="detail-label">Atomic Mass</div>
+          <div class="detail-value">${el.mass}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Phase</div>
+          <div class="detail-value">${el.phase}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Group</div>
+          <div class="detail-value">${el.group}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Period</div>
+          <div class="detail-value">${el.period}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Density</div>
+          <div class="detail-value">${el.density}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Electron Config</div>
+          <div class="detail-value">${el.electron}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Melting Point</div>
+          <div class="detail-value">${el.melt}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Boiling Point</div>
+          <div class="detail-value">${el.boil}</div>
+        </div>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+
+    document.getElementById('modalClose').addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') modal.classList.remove('active');
+    });
+
+    // Filters
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        document.querySelectorAll('.element').forEach(el => {
+          if (filter === 'all') {
+            el.classList.remove('filtered-out');
+          } else {
+            if (el.dataset.category === filter) {
+              el.classList.remove('filtered-out');
+            } else {
+              el.classList.add('filtered-out');
+            }
+          }
+        });
+      });
+    });
+
+    buildGrid();
+  </script>
+</body>
+</html>
