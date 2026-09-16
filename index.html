@@ -104,9 +104,29 @@
     .modal .detail-label{font-size:0.5rem;text-transform:uppercase;letter-spacing:0.1em;opacity:0.35;margin-bottom:0.2rem}
     .modal .detail-value{font-family:'Space Mono',monospace;font-size:0.8rem;color:var(--text-bright)}
     .modal .detail-item.full{grid-column:1/-1}
-    @media(max-width:900px){.periodic-grid{grid-template-columns:repeat(18,44px);gap:4px}.element{min-width:44px;min-height:44px;border-radius:10px}.element .number{font-size:0.4rem}.element .symbol{font-size:0.85rem}.element .name{display:none}}
-    @media(max-width:600px){.periodic-grid{grid-template-columns:repeat(18,36px);gap:3px}.element{min-width:36px;min-height:36px;border-radius:8px}.element .number{display:none}.element .symbol{font-size:0.7rem}.legend{gap:1rem}.modal{padding:1.5rem;border-radius:16px}.modal .element-symbol{font-size:3rem}}
-    @media(max-width:400px){.periodic-grid{grid-template-columns:repeat(9,1fr)}}
+    .scroll-hint{display:none;text-align:center;font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;opacity:0.35}
+    @media(max-width:900px){.periodic-grid{grid-template-columns:repeat(18,46px);gap:5px}.element{min-width:46px;min-height:46px;border-radius:11px}.element .number{font-size:0.42rem}.element .symbol{font-size:0.92rem}.element .name{display:none}}
+    @media(max-width:600px){
+      .header{padding:1.5rem 1rem 1.1rem}.header h1{letter-spacing:0.14em}
+      .legend{padding:1rem 1rem;gap:1.3rem}
+      .legend-dot{width:20px;height:3px}
+      .search-container{padding:0 1rem 0.9rem}
+      .search-input{max-width:none;height:2.6rem;border-radius:14px;font-size:0.85rem;padding:0.6rem 1.2rem}
+      .filters{padding:0.2rem 1rem 1.1rem;gap:0.5rem}
+      .filter-btn{flex:1;min-width:0;padding:0.72rem 0.2rem;font-size:0.66rem;border-radius:14px;white-space:nowrap}
+      .stats{padding:0 1rem 1.1rem;gap:1.5rem}
+      .scroll-hint{display:block;padding:0 1rem 0.6rem}
+      .table-container{padding:0 0 2.5rem;scroll-snap-type:x proximity}
+      .periodic-grid{grid-template-columns:repeat(18,46px);gap:5px;padding:0.25rem 1rem;margin:0 auto;min-width:calc(18 * 46px + 17 * 5px + 2rem)}
+      .element{min-width:46px;min-height:46px;border-radius:12px;scroll-snap-align:start}
+      .element .number{font-size:0.42rem}
+      .element .symbol{font-size:0.95rem}
+      .element::before,.element::after{border-radius:12px}
+      .modal{padding:1.5rem;border-radius:16px}.modal .element-symbol{font-size:3rem}
+      .modal .details{gap:0.7rem}
+      .modal .detail-item{padding:0.55rem 0.7rem}
+    }
+    @media(max-width:400px){.periodic-grid{grid-template-columns:repeat(18,44px);gap:4px;min-width:calc(18 * 44px + 17 * 4px + 1rem);padding:0.2rem 0.5rem}.element{min-width:44px;min-height:44px;border-radius:10px}.element .symbol{font-size:0.9rem}}
     @media(prefers-reduced-motion:reduce){body::before,.element,.element::before,.element::after,.filter-btn,.search-input,.modal,.modal-close,.legend-dot{animation:none!important;transition:none!important}.element .spot,.element .ripple{display:none}}
   </style>
 </head>
@@ -129,6 +149,7 @@
     <button class="filter-btn" data-filter="semi-metal">Semi-Metals</button>
     <button class="filter-btn" data-filter="metal">Metals</button>
   </div>
+  <div class="scroll-hint">hold &amp; swipe the table sideways</div>
   <div class="stats">
     <div class="stat"><span id="totalCount">118</span> Elements</div>
     <div class="stat"><span id="visibleCount">118</span> Visible</div>
